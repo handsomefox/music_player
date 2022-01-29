@@ -13,8 +13,8 @@ public:
   };
 
   Player();
-  ~Player();
-  QMediaPlayer *getQtPlayer();
+  ~Player() override;
+  [[nodiscard]] const QMediaPlayer &getQtPlayer() const;
   void setFiles(const std::vector<File> &vec);
 
   // Controls
@@ -34,8 +34,8 @@ private:
   void previousSong();
 
 private:
-  QAudioOutput *m_output = nullptr;
-  QMediaPlayer *m_player = nullptr;
+  QAudioOutput *m_output;
+  QMediaPlayer *m_player;
 
   std::size_t m_current_song_id = 0;
   State m_player_state = State::None;

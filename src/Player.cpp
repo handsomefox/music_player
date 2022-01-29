@@ -2,11 +2,10 @@
 #include "DirectoryParser.h"
 
 Player::Player()
-    : m_player(new QMediaPlayer), m_output(new QAudioOutput) {
+    : m_output(new QAudioOutput), m_player(new QMediaPlayer) {
   m_player->setAudioOutput(m_output);
   m_output->setVolume(25);
 }
-
 Player::~Player() {
   delete m_player;
 }
@@ -14,7 +13,7 @@ void Player::setFiles(const std::vector<File> &vec) {
   m_files = vec;
 }
 void Player::togglePlay() {
-  if (m_player == nullptr)
+  if (m_files.empty())
     return;
 
   if (m_player_state == State::Playing) {
@@ -24,20 +23,38 @@ void Player::togglePlay() {
   }
 
   if (m_player_state != State::Paused) {
-    m_player->setSource(QUrl::fromLocalFile(QString::fromStdWString(m_files[m_current_song_id].path)));
+    m_player->setSource(m_files[m_current_song_id].path);
   }
   m_player->play();
   m_player_state = State::Playing;
 }
 void Player::play(size_t index) {
-  if (m_player == nullptr)
+  if (m_files.empty())
     return;
-
-  m_player->setSource(QString::fromStdWString(m_files[index].path));
+  m_player->setSource(m_files[index].path);
   m_player->play();
-  std::cout << m_player->duration() << '\n';
   m_player_state = State::Playing;
   m_current_song_id = index;
+}
+void Player::next() {
+  if (m_files.empty())
+    return;
+  if (m_player == nullptr)
+    return;
+  nextSong();
+  m_player->setSource(m_files[m_current_song_id].path);
+  m_player->play();
+  m_player_state = State::Playing;
+}
+void Player::previous() {
+  if (m_files.empty())
+    return;
+  if (m_player == nullptr)
+    return;
+  previousSong();
+  m_player->setSource(m_files[m_current_song_id].path);
+  m_player->play();
+  m_player_state = State::Playing;
 }
 void Player::toggleShuffle() {
   m_shuffle = !m_shuffle;
@@ -51,8 +68,8 @@ bool Player::getShuffle() const {
 bool Player::getRepeat() const {
   return m_repeat;
 }
-QMediaPlayer *Player::getQtPlayer() {
-  return m_player;
+const QMediaPlayer &Player::getQtPlayer() const {
+  return *m_player;
 }
 void Player::shuffle() {
   std::random_device device;
@@ -94,20 +111,4 @@ void Player::previousSong() {
   if (m_current_song_id <= 0) {
     m_current_song_id = m_files.size() - 1;
   }
-}
-void Player::next() {
-  if (m_player == nullptr)
-    return;
-  nextSong();
-  m_player->setSource(QUrl::fromLocalFile(QString::fromStdWString(m_files[m_current_song_id].path)));
-  m_player->play();
-  m_player_state = State::Playing;
-}
-void Player::previous() {
-  if (m_player == nullptr)
-    return;
-  previousSong();
-  m_player->setSource(QUrl::fromLocalFile(QString::fromStdWString(m_files[m_current_song_id].path)));
-  m_player->play();
-  m_player_state = State::Playing;
 }
