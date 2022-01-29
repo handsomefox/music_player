@@ -2,7 +2,6 @@
 
 #include "pch.h"
 #include <QString>
-#include <QStringView>
 
 struct File {
   File() = default;

@@ -13,7 +13,7 @@ public:
   };
 
   Player();
-  ~Player() override;
+  ~Player();
   [[nodiscard]] const QMediaPlayer &getQtPlayer() const;
   void setFiles(const std::vector<File> &vec);
 
