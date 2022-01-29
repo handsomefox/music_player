@@ -1,7 +1,7 @@
 #include "pch.h"
 
-#include "MainWindow.h"
 #include "./ui_MainWindow.h"
+#include "MainWindow.h"
 
 #include "DirectoryParser.h"
 #include "Metadata.h"
@@ -16,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent)
   setupUI();
 
   m_player = new Player();
-  connect(m_player->getQtPlayer(), &QMediaPlayer::positionChanged, this, &MainWindow::onPositionChanged);
+  connect(&m_player->getQtPlayer(), &QMediaPlayer::mediaStatusChanged, this, &MainWindow::mediaStatusChanged);
+  connect(&m_player->getQtPlayer(), &QMediaPlayer::positionChanged, this, &MainWindow::onPositionChanged);
   connect(ui->directory_listview, &QListView::doubleClicked, this, &MainWindow::onDoubleClicked);
 }
 MainWindow::~MainWindow() {
@@ -27,7 +28,7 @@ MainWindow::~MainWindow() {
 }
 void MainWindow::on_actionOpen_directory_triggered() {
   m_current_songs_list.clear();
-  QString folder_path = QFileDialog::getExistingDirectory((this), "Open folder with music");
+  auto folder_path = QFileDialog::getExistingDirectory((this), "Open folder with music");
 
   if (folder_path.isEmpty()) {
     QMessageBox::warning(this, "Warning", "Couldn't open folder");
@@ -39,15 +40,14 @@ void MainWindow::on_actionOpen_directory_triggered() {
   m_current_songs_list = m_parser->getFiles();
   useFiles();
 }
-void MainWindow::onDoubleClicked(const QModelIndex &index) {
+void MainWindow::onDoubleClicked(const QModelIndex &index) const {
   m_player->play(index.row());
-  connect(m_player->getQtPlayer(), &QMediaPlayer::mediaStatusChanged, this, &MainWindow::mediaStatusChanged);
 }
-void MainWindow::onPositionChanged(quint64 position) {
-  auto Seconds = (position / 1000) % 60;
-  auto Minutes = ((position / 1000) - Seconds) / 60;
-  ui->current_progress->setText(getFormattedLength(Minutes, Seconds));
-  ui->song_progressbar->setValue(position);
+void MainWindow::onPositionChanged(quint64 position) const {
+  const auto seconds = (position / 1000) % 60;
+  const auto minutes = ((position / 1000) - seconds) / 60;
+  ui->current_progress->setText(getFormattedLength((int) minutes, (int) seconds));
+  ui->song_progressbar->setValue((int) position);
 }
 void MainWindow::setupUI() {
   m_placeholder = new QPixmap(ui->album_cover_label->maximumWidth(), ui->album_cover_label->maximumHeight());
@@ -65,8 +65,8 @@ QString MainWindow::getFormattedLength(int minutes, int seconds) {
   oss << std::setfill('0') << std::setw(2) << minutes;
   oss_second << std::setfill('0') << std::setw(2) << seconds;
 
-  std::string str = oss.str();
-  std::string str2 = oss_second.str();
+  const auto str = oss.str();
+  const auto str2 = oss_second.str();
 
   return QString::fromStdString(str + ':' + str2);
 }
@@ -89,7 +89,7 @@ void MainWindow::useFiles() {
   vector.reserve((qsizetype) m_current_songs_list.size());
 
   for (auto &file : m_current_songs_list) {
-    vector.push_back(QString::fromStdWString(file.fs_path.filename()));
+    vector.push_back(file.filenameAsQString());
   }
 
   QStringList list = QStringList::fromVector(vector);
@@ -102,11 +102,11 @@ void MainWindow::useFiles() {
 void MainWindow::mediaStatusChanged(QMediaPlayer::MediaStatus status) {
   switch (status) {
   case QMediaPlayer::LoadedMedia: {
-    auto metadata = Metadata(m_player->getQtPlayer()->metaData());
+    auto metadata = Metadata(m_player->getQtPlayer().metaData());
     setImage(metadata.Cover);
     updateProgress(metadata.Milliseconds);
-    ui->artist_label->setText(QString::fromStdWString(metadata.Artist));
-    ui->title_label->setText(QString::fromStdWString(metadata.Title));
+    ui->artist_label->setText(metadata.Artist);
+    ui->title_label->setText(metadata.Title);
     ui->song_length->setText(getFormattedLength(metadata.Minutes, metadata.Seconds));
     break;
   }
@@ -117,58 +117,46 @@ void MainWindow::mediaStatusChanged(QMediaPlayer::MediaStatus status) {
   default: break;
   }
 }
-void MainWindow::on_previous_button_clicked() {
-  if (m_player == nullptr)
-    return;
+void MainWindow::on_previous_button_clicked() const {
   m_player->previous();
 }
-void MainWindow::on_play_pause_button_clicked() {
-  if (m_player == nullptr)
-    return;
+void MainWindow::on_play_pause_button_clicked() const {
   m_player->togglePlay();
 }
-void MainWindow::on_next_button_clicked() {
-  if (m_player == nullptr)
-    return;
+void MainWindow::on_next_button_clicked() const {
   m_player->next();
 }
-void MainWindow::on_shuffle_button_clicked() {
-  if (m_player == nullptr)
-    return;
+void MainWindow::on_shuffle_button_clicked() const {
   m_player->toggleShuffle();
   ui->actionShuffle->setChecked(m_player->getShuffle());
 }
-void MainWindow::on_repeat_button_clicked() {
-  if (m_player == nullptr)
-    return;
+void MainWindow::on_repeat_button_clicked() const {
   m_player->toggleRepeat();
   ui->actionRepeat->setChecked(m_player->getRepeat());
-
 }
-void MainWindow::on_actionEnable_dark_mode_triggered() {
-  if (ui->actionEnable_dark_mode->isChecked()) {
-    QFile file(":/dark-purple/stylesheet.qss");
-    file.open(QFile::ReadOnly | QFile::Text);
+void MainWindow::loadThemeFromFile(const QString &path) {
+  QFile file(path);
+  if (file.open(QFile::ReadOnly | QFile::Text)) {
     QTextStream stream(&file);
     qApp->setStyleSheet(stream.readAll());
     file.close();
+  }
+}
+void MainWindow::on_actionEnable_dark_mode_triggered() const {
+  if (ui->actionEnable_dark_mode->isChecked()) {
+    loadThemeFromFile(":/dark-purple/stylesheet.qss");
     ui->actionEnable_dark_mode->setChecked(true);
   } else {
-    QFile file(":/light-purple/stylesheet.qss");
-    file.open(QFile::ReadOnly | QFile::Text);
-    QTextStream stream(&file);
-    qApp->setStyleSheet(stream.readAll());
-    file.close();
+    loadThemeFromFile(":/light-purple/stylesheet.qss");
     ui->actionEnable_dark_mode->setChecked(false);
   }
 }
-
 void MainWindow::on_actionExit_triggered() {
   QApplication::exit();
 }
-void MainWindow::on_actionShuffle_triggered() {
+void MainWindow::on_actionShuffle_triggered() const {
   on_shuffle_button_clicked();
 }
-void MainWindow::on_actionRepeat_triggered() {
+void MainWindow::on_actionRepeat_triggered() const {
   on_repeat_button_clicked();
 }
