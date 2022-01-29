@@ -1,14 +1,18 @@
 #pragma once
 
 #include "pch.h"
+#include <QString>
+#include <QStringView>
 
 struct File {
   File() = default;
-  explicit File(const std::filesystem::path &p) {
-    path = p.wstring();
-    fs_path = p;
-    std::replace(begin(path), end(path), '\\', '/');
+  explicit File(const std::filesystem::path &p) : fs_path(p) {
+    path = QString::fromStdWString(p.wstring());
+    std::ranges::replace(path, '\\', '/');
   }
-  std::wstring path;
+  [[nodiscard]] QString filenameAsQString() const {
+    return QString::fromStdWString(fs_path.filename().wstring());
+  }
+  QString path;
   std::filesystem::path fs_path;
 };
