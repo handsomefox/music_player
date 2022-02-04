@@ -50,6 +50,16 @@ void MainWindow::onPositionChanged(quint64 position) const {
   ui->song_progressbar->setValue((int) position);
 }
 void MainWindow::setupUI() {
+  m_placeholder = new QPixmap();
+  const auto placeholder_path = QGuiApplication::applicationDirPath() + "/res/cd-drive.png";
+  m_placeholder->load(placeholder_path);
+
+  const auto w = ui->album_cover_label->width();
+  const auto h = ui->album_cover_label->height();
+
+  ui->album_cover_label->setPixmap(m_placeholder->scaled(w, h, Qt::KeepAspectRatio));
+  ui->album_cover_label->setAlignment(Qt::AlignCenter);
+
   m_placeholder = new QPixmap(ui->album_cover_label->maximumWidth(), ui->album_cover_label->maximumHeight());
   m_placeholder->load("G:/Placeholder/compact-disc.png");
   ui->album_cover_label->setPixmap(*m_placeholder);

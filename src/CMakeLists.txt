@@ -30,3 +30,6 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_executable(music_player ${SOURCE_FILES})
 target_link_libraries(music_player Qt6::Widgets Qt6::Multimedia Qt6::QuickControls2 breeze_themes)
 target_precompile_headers(music_player PRIVATE pch.h)
+
+file(COPY ${PROJECT_SOURCE_DIR}/res/cd-drive.png
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/res/)
