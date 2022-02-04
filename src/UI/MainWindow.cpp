@@ -82,15 +82,11 @@ QString MainWindow::getFormattedLength(int minutes, int seconds) {
 void MainWindow::setImage(const QImage &image) {
   auto pixmap = QPixmap::fromImage(image);
 
+  const auto w = ui->album_cover_label->width();
+  const auto h = ui->album_cover_label->height();
   if (!pixmap.isNull()) {
-    const auto w = ui->album_cover_label->width();
-    const auto h = ui->album_cover_label->height();
-
     ui->album_cover_label->setPixmap(pixmap.scaled(w, h, Qt::KeepAspectRatio));
   } else {
-    const auto w = ui->album_cover_label->width();
-    const auto h = ui->album_cover_label->height();
-
     ui->album_cover_label->setPixmap(m_placeholder->scaled(w, h, Qt::KeepAspectRatio));
   }
 }
