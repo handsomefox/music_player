@@ -1,8 +1,10 @@
 #pragma once
 
+#include "DirectoryParser.h"
 #include "File.h"
-#include <QMediaPlayer>
+
 #include <QAudioOutput>
+#include <QMediaPlayer>
 
 class Player {
 public:
@@ -15,7 +17,9 @@ public:
   Player();
   ~Player();
   [[nodiscard]] const QMediaPlayer &getQtPlayer() const;
-  void setFiles(const std::vector<File> &vec);
+
+  void setDirectory(const std::wstring &path);
+  const std::vector<File> &getFiles();
 
   // Controls
   void togglePlay();
@@ -37,10 +41,10 @@ private:
   QAudioOutput *m_output;
   QMediaPlayer *m_player;
 
+  std::vector<File> m_files;
+
   std::size_t m_current_song_id = 0;
   State m_player_state = State::None;
   bool m_shuffle = false;
   bool m_repeat = false;
-
-  std::vector<File> m_files;
 };

@@ -4,14 +4,21 @@
 #include <QString>
 
 struct File {
-  File() = default;
-  explicit File(const std::filesystem::path &p) : fs_path(p) {
-    path = QString::fromStdWString(p.wstring());
-    std::ranges::replace(path, '\\', '/');
+  File() = delete;
+
+  explicit File(std::filesystem::path p) : fs_path(std::move(p)) {
   }
-  [[nodiscard]] QString filenameAsQString() const {
+
+  [[nodiscard]] QString filename() const {
     return QString::fromStdWString(fs_path.filename().wstring());
   }
-  QString path;
+
+  [[nodiscard]] QString path() const {
+    QString path = QString::fromStdWString(fs_path.wstring());
+    std::ranges::replace(path, '\\', '/');// Replace backslash to forward slash because Qt doesn't recognize \ in path
+    return path;
+  }
+
+private:
   std::filesystem::path fs_path;
 };
